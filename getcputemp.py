@@ -30,7 +30,7 @@ def signalreport():
     global x,y,args,signal_end_time
     signal_end_time = time.time()
     if args.disableshow:
-        p2.terminate() 
+        p2.terminate()
     save.generating_curves(x,y)
     sys.exit()
 
@@ -130,9 +130,9 @@ class DisplaySave:
         self.xmajorLocator = MultipleLocator(float(self.args.i.strip()[0:-1]))
         # xminorLocator = MultipleLocator(1)  # 将x轴次刻度标签设置为1的倍数
         self.fig, self.ax = plt.subplots()
-        self.fig.text(0.01,0.92,"绿色:温度在65以下",color="green",verticalalignment='bottom',fontsize=7,fontweight="heavy")
-        self.fig.text(0.01,0.95,"洋红:温度在65至74之间",color="magenta",verticalalignment='bottom',fontsize=7,fontweight="heavy")
-        self.fig.text(0.01,0.98,"红色:温度在74以上",color="red",verticalalignment='bottom',fontsize=7,fontweight="heavy")
+        self.fig.text(0.01,0.92,"绿色:温度在65以下",color="green",verticalalignment='bottom',fontsize=8,fontweight="heavy")
+        self.fig.text(0.01,0.95,"洋红:温度在65至74之间",color="magenta",verticalalignment='bottom',fontsize=8,fontweight="heavy")
+        self.fig.text(0.01,0.98,"红色:温度在74以上",color="red",verticalalignment='bottom',fontsize=8,fontweight="heavy")
         # 定义Y轴刻度
         self.y_range = ['%d' % i for i in np.linspace(1, 100, 50)]
         self.y_num = [eval(oo) for oo in self.y_range]
