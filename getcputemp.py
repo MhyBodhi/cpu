@@ -1,5 +1,6 @@
 import sys
 sys.path.append(".")
+import re
 import time
 import os
 import argparse
@@ -27,16 +28,18 @@ def handler(signum, frame):
     signalreport()
 
 def signalreport():
-    global x,y,args,signal_end_time
-    signal_end_time = time.time()
+    global x,y,statistical_timestamps,report_path
     if args.disableshow:
+        print("display进程结束...")
         p2.terminate()
-    #Call the report generation process
-    save.generating_curves(x,y)
+    #send data report generation process
+    q_save.put((x,y,statistical_timestamps,report_path,1))
+    print()
+    time.sleep(5)
     sys.exit()
 
-def gettemp(q,t,args):
-    global x,y,signal_start_time,start_time,end_time,report_path,statistical_timestamps
+def gettemp(t,args):
+    global x,y,report_path,statistical_timestamps
     x = []
     y = []
     #记录真实获取到温度时的时间戳，注意这里不是简单的加采样频率时间，程序自身获取数据时有一定的时间消耗
@@ -46,7 +49,6 @@ def gettemp(q,t,args):
     sampling_frequency = float(args.i.strip()[0:-1])
     signal.signal(signal.SIGINT,handler)
     start_time = time.time()
-    signal_start_time = start_time
     #当前函数运行状态
     current_fun_status = 1
     if t:
@@ -79,13 +81,14 @@ def gettemp(q,t,args):
                 y.append(float(temp)/1000)
                 # 向display进程传递数据
                 if args.disableshow:
-                    q.put((statistical_timestamps, x, y,sampling_time,current_fun_status))
+                    q_display.put((statistical_timestamps, x, y,sampling_time,current_fun_status))
                 time.sleep(sampling_time)
                 start += sampling_frequency
 
                 #每隔30次生成报告
-                if len(x)==30:
-                    save.generating_curves(x,y)
+                if len(x)==10:
+                    q_save.put((x,y,statistical_timestamps,report_path,0))
+                    print()
                     x.clear()
                     y.clear()
                     statistical_timestamps.clear()
@@ -94,9 +97,9 @@ def gettemp(q,t,args):
                 # 向display进程传递数据
                 if args.disableshow:
                     current_fun_status = 0
-                    q.put((statistical_timestamps, x, y, sampling_time, current_fun_status))
-                save.generating_curves(x,y)
-                print("成功....")
+                    q_display.put((statistical_timestamps, x, y, sampling_time, current_fun_status))
+                q_save.put((x,y,statistical_timestamps,report_path,1))
+                print()
                 break
         else:
             while True:
@@ -111,22 +114,24 @@ def gettemp(q,t,args):
             y.append(float(temp)/1000)
             # 向display进程传递数据
             if args.disableshow:
-                q.put((statistical_timestamps, x, y, sampling_time, current_fun_status))
+                q_display.put((statistical_timestamps, x, y, sampling_time, current_fun_status))
             time.sleep(sampling_time)
             start += sampling_frequency
-            if len(x) == 30:
-                save.generating_curves(x, y)
+            if len(x) == 10:
+                q_save.put((x,y,statistical_timestamps,report_path,0))
+                print()
                 x.clear()
                 y.clear()
                 statistical_timestamps.clear()
 
 class DisplaySave:
 
-    def __init__(self,q,args):
-        self.q = q
+    def __init__(self,args):
+        self.q_display = q_display
+        self.q_save = q_save
         self.args = args
     def init(self):
-        plt.rcParams['font.family'] = ['STFangsong']
+        plt.rcParams['font.family'] = ['Microsoft YaHei']
 
         self.xmajorLocator = MultipleLocator(float(self.args.i.strip()[0:-1]))
         # xminorLocator = MultipleLocator(1)  # 将x轴次刻度标签设置为1的倍数
@@ -154,38 +159,51 @@ class DisplaySave:
         # 设置坐标轴刻度标记的大小
         plt.tick_params(axis='both', labelsize=10)
 
-    def generating_curves(self,x, y):
-
-        global signal_start_time, signal_end_time, start_time, end_time, report_path, statistical_timestamps
+    def generating_curves(self):
+        regex = re.compile("(.*?)\s+(.*?):(.*?):(.*)")
         matplotlib.use("SVG")
         self.init()
-        x_ticks = [time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(report_time)) for report_time in
-                   statistical_timestamps]
-        plt.xticks(x, x_ticks, color="black")
-        # 设置线宽
-        plt.plot(x, y, color="blue", linewidth=1, label="CPU温度走势")
-        for i, j in zip(x, y):
-            if j > 74:
-                color = "red"
-            elif 65 <= j <= 74:
-                color = "magenta"
-            else:
-                color = "green"
-            plt.text(i, j, "%.1f$^\circ$C" % j, ha='left', va='bottom', fontsize=8, color=color)
-        # 设置图例格式
-        plt.legend(loc=1, borderaxespad=0.)
-        try:
-            plt.savefig(report_path + "/{}.svg".format(
-                " ".join(regex.findall(x_ticks[0])[0]) + "---" + " ".join(regex.findall(x_ticks[-1])[0])), dpi=1200,
-                        format='svg')
-        except:
-            pass
-        # plt.show()
+        while True:
+            try:
+                x,y,statistical_timestamps,report_path,signalover = self.q_save.get(False)
+                #判断是否为空
+                if x==[]:
+                    break
+            except Exception as e:
+                continue
+            x_ticks = [time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(report_time)) for report_time in
+                       statistical_timestamps]
+            plt.xticks(x, x_ticks, color="black")
+            # 设置线宽
+            plt.plot(x, y, color="blue", linewidth=1, label="CPU温度走势")
+            for i, j in zip(x, y):
+                if j > 74:
+                    color = "red"
+                elif 65 <= j <= 74:
+                    color = "magenta"
+                else:
+                    color = "green"
+                plt.text(i, j, "%.1f$^\circ$C" % j, ha='left', va='bottom', fontsize=8, color=color)
+            # 设置图例格式
+            plt.legend(loc=1, borderaxespad=0.)
+            try:
+                plt.savefig(report_path + "/{}.svg".format(
+                    " ".join(regex.findall(x_ticks[0])[0]) + "---" + " ".join(regex.findall(x_ticks[-1])[0])), dpi=1200,
+                            format='svg')
+            except Exception as e:
+                print("异常",e)
+
+            print("signalover",signalover)
+            if signalover:
+                print("save进程结束...")
+                break
+            # plt.show()
+
     def displaylive(self):
         self.init()
         while True:
             try:
-                self.data = self.q.get(False)
+                self.data = self.q_display.get(False)
                 #判断gettemp函数状态
                 if not self.data[-1]:
                     plt.close()
@@ -213,37 +231,21 @@ class DisplaySave:
                 plt.text(i,j,"%.1f$^\circ$C"%j,ha='left',va='bottom',fontsize=8,color=color)
             plt.pause(0.01)
 
-def report(save,q):
-    xlist = []
-    ylist = []
-    while True:
-        try:
-            data = q.get(False)
-            # 判断gettemp函数状态
-            # if not self.data[-1]:
-            #     plt.close()
-            #     break
-        except:
-            continue
-
-
 def write():
     import random
     while True:
-        number = random.randint(50,100)
+        number = random.randint(50000,100000)
         os.system("echo {} > temp".format(number))
         time.sleep(1)
 
 if __name__ == '__main__':
-    import re
     regex = re.compile("(.*?)\s+(.*?):(.*?):(.*)")
     #获取数据实时显示
-    q = Queue()
+    q_display = Queue()
     #获取数据生成报告
-    q_report = Queue()
+    q_save = Queue()
     if not os.path.exists("./reports"):
         os.mkdir("./reports")
-    signal_end_time = None
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", help="Test duration,The unit is Days, hours, minutes or seconds.eg 10m 10h 10d")
     parser.add_argument("-i", default="3s", help="Specify how often to count.eg 30s 1m 1h ...")
@@ -264,23 +266,29 @@ if __name__ == '__main__':
             t = float(test_time[0:-1])*60*60*24
     else:
         t = None
-    #write process
+    #write process mdf
     p1 = Process(target=write)
     p1.start()
+
+    # report process
+    base = DisplaySave(args)
+    p3 = Process(target=base.generating_curves)
+    p3.start()
+
     if args.disableshow:
-        display = DisplaySave(q,args)
-        p2 = Process(target=display.displaylive)
+        # display = DisplaySave(args)
+        #display process
+        p2 = Process(target=base.displaylive)
         p2.start()
-    save = DisplaySave(q,args)
 
     print("start...")
     print("t %ss"%t)
-    temps = gettemp(q,t,args)
+    temps = gettemp(t,args)
     for temp in temps:
-        # print("温度",float(temp)/1000)
         pass
     if args.disableshow:
         p2.join()
-    #write process
-    p1.join()
+    #write process mdf
+    p3.join()
+    p1.terminate()
     print("main结束")
