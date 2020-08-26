@@ -31,6 +31,7 @@ def signalreport():
     signal_end_time = time.time()
     if args.disableshow:
         p2.terminate()
+    #Call the report generation process
     save.generating_curves(x,y)
     sys.exit()
 
@@ -67,7 +68,7 @@ def gettemp(q,t,args):
                     print("请至少测试10秒")
                     return
                 while True:
-                    res = os.popen("cat /sys/class/thermal/thermal_zone0/temp")
+                    res = os.popen("type temp")
                     temp = res.readline().strip()
                     if temp:
                         statistical_timestamps.append(time.time())
@@ -99,7 +100,7 @@ def gettemp(q,t,args):
                 break
         else:
             while True:
-                res = os.popen("cat /sys/class/thermal/thermal_zone0/temp")
+                res = os.popen("type temp")
                 temp = res.readline().strip()
                 if temp:
                     statistical_timestamps.append(time.time())
@@ -212,10 +213,34 @@ class DisplaySave:
                 plt.text(i,j,"%.1f$^\circ$C"%j,ha='left',va='bottom',fontsize=8,color=color)
             plt.pause(0.01)
 
+def report(save,q):
+    xlist = []
+    ylist = []
+    while True:
+        try:
+            data = q.get(False)
+            # 判断gettemp函数状态
+            # if not self.data[-1]:
+            #     plt.close()
+            #     break
+        except:
+            continue
+
+
+def write():
+    import random
+    while True:
+        number = random.randint(50,100)
+        os.system("echo {} > temp".format(number))
+        time.sleep(1)
+
 if __name__ == '__main__':
     import re
     regex = re.compile("(.*?)\s+(.*?):(.*?):(.*)")
+    #获取数据实时显示
     q = Queue()
+    #获取数据生成报告
+    q_report = Queue()
     if not os.path.exists("./reports"):
         os.mkdir("./reports")
     signal_end_time = None
@@ -239,7 +264,9 @@ if __name__ == '__main__':
             t = float(test_time[0:-1])*60*60*24
     else:
         t = None
-    #
+    #write process
+    p1 = Process(target=write)
+    p1.start()
     if args.disableshow:
         display = DisplaySave(q,args)
         p2 = Process(target=display.displaylive)
@@ -254,4 +281,6 @@ if __name__ == '__main__':
         pass
     if args.disableshow:
         p2.join()
+    #write process
+    p1.join()
     print("main结束")
