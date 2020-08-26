@@ -86,7 +86,7 @@ def gettemp(t,args):
                 start += sampling_frequency
 
                 #每隔30次生成报告
-                if len(x)==10:
+                if len(x)==30:
                     q_save.put((x,y,statistical_timestamps,report_path,0))
                     print()
                     x.clear()
@@ -117,7 +117,7 @@ def gettemp(t,args):
                 q_display.put((statistical_timestamps, x, y, sampling_time, current_fun_status))
             time.sleep(sampling_time)
             start += sampling_frequency
-            if len(x) == 10:
+            if len(x) == 30:
                 q_save.put((x,y,statistical_timestamps,report_path,0))
                 print()
                 x.clear()

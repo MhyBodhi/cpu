@@ -20,8 +20,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4cfeec8f-464a-499e-b61d-ad459a1c77f0" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/cpu.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cpu.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/getcputemp.py" beforeDir="false" afterPath="$PROJECT_DIR$/getcputemp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/temp" beforeDir="false" afterPath="$PROJECT_DIR$/temp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -57,7 +56,7 @@
       <workItem from="1597284350532" duration="80000" />
       <workItem from="1598429947960" duration="4360000" />
       <workItem from="1598434385710" duration="138000" />
-      <workItem from="1598468849290" duration="302000" />
+      <workItem from="1598468849290" duration="735000" />
     </task>
     <servers />
   </component>
@@ -81,5 +80,9 @@
       <screen x="0" y="0" width="1366" height="728" />
     </state>
     <state x="407" y="164" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1366.728@0.0.1366.728" timestamp="1598432636475" />
+    <state x="131" y="137" width="1166" height="528" key="com.intellij.history.integration.ui.views.DirectoryHistoryDialog" timestamp="1598469348533">
+      <screen x="0" y="0" width="1366" height="728" />
+    </state>
+    <state x="131" y="137" width="1166" height="528" key="com.intellij.history.integration.ui.views.DirectoryHistoryDialog/0.0.1366.728@0.0.1366.728" timestamp="1598469348533" />
   </component>
 </project>
