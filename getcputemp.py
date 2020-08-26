@@ -134,7 +134,6 @@ class DisplaySave:
         plt.rcParams['font.family'] = ['Microsoft YaHei']
 
         self.xmajorLocator = MultipleLocator(float(self.args.i.strip()[0:-1]))
-        # xminorLocator = MultipleLocator(1)  # 将x轴次刻度标签设置为1的倍数
         self.fig, self.ax = plt.subplots()
         self.fig.text(0.01,0.92,"绿色:温度在65以下",color="green",verticalalignment='bottom',fontsize=8,fontweight="heavy")
         self.fig.text(0.01,0.95,"洋红:温度在65至74之间",color="magenta",verticalalignment='bottom',fontsize=8,fontweight="heavy")
@@ -197,7 +196,6 @@ class DisplaySave:
             if signalover:
                 print("save进程结束...")
                 break
-            # plt.show()
 
     def displaylive(self):
         self.init()
@@ -276,7 +274,6 @@ if __name__ == '__main__':
     p3.start()
 
     if args.disableshow:
-        # display = DisplaySave(args)
         #display process
         p2 = Process(target=base.displaylive)
         p2.start()

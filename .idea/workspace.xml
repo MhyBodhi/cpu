@@ -20,10 +20,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4cfeec8f-464a-499e-b61d-ad459a1c77f0" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/temp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/cpu.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cpu.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/getcputemp.py" beforeDir="false" afterPath="$PROJECT_DIR$/getcputemp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/install.sh" beforeDir="false" afterPath="$PROJECT_DIR$/install.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/temp" beforeDir="false" afterPath="$PROJECT_DIR$/temp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,6 +57,7 @@
       <workItem from="1597284350532" duration="80000" />
       <workItem from="1598429947960" duration="4360000" />
       <workItem from="1598434385710" duration="138000" />
+      <workItem from="1598468849290" duration="302000" />
     </task>
     <servers />
   </component>
