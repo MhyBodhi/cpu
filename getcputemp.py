@@ -5,7 +5,7 @@ import time
 import os
 import argparse
 import signal
-from multiprocessing import Process,Queue
+from multiprocessing import Process,Queue,Pipe
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -33,9 +33,8 @@ def signalreport():
         print("display进程结束...")
         p2.terminate()
     #send data report generation process
-    q_save.put((x,y,statistical_timestamps,report_path,1))
-    print()
-    time.sleep(5)
+    p_send.send((x,y,statistical_timestamps,report_path,1))
+    p3.join()
     sys.exit()
 
 def gettemp(t,args):
@@ -70,7 +69,7 @@ def gettemp(t,args):
                     print("请至少测试10秒")
                     return
                 while True:
-                    res = os.popen("type temp")
+                    res = os.popen("cat /sys/class/thermal/thermal_zone0/temp")
                     temp = res.readline().strip()
                     if temp:
                         statistical_timestamps.append(time.time())
@@ -87,8 +86,8 @@ def gettemp(t,args):
 
                 #每隔30次生成报告
                 if len(x)==30:
-                    q_save.put((x,y,statistical_timestamps,report_path,0))
-                    print()
+                    p_send.send((x,y,statistical_timestamps,report_path,0))
+
                     x.clear()
                     y.clear()
                     statistical_timestamps.clear()
@@ -98,12 +97,12 @@ def gettemp(t,args):
                 if args.disableshow:
                     current_fun_status = 0
                     q_display.put((statistical_timestamps, x, y, sampling_time, current_fun_status))
-                q_save.put((x,y,statistical_timestamps,report_path,1))
-                print()
+                p_send.send((x,y,statistical_timestamps,report_path,1))
+
                 break
         else:
             while True:
-                res = os.popen("type temp")
+                res = os.popen("cat /sys/class/thermal/thermal_zone0/temp")
                 temp = res.readline().strip()
                 if temp:
                     statistical_timestamps.append(time.time())
@@ -118,8 +117,8 @@ def gettemp(t,args):
             time.sleep(sampling_time)
             start += sampling_frequency
             if len(x) == 30:
-                q_save.put((x,y,statistical_timestamps,report_path,0))
-                print()
+                p_send.send((x,y,statistical_timestamps,report_path,0))
+
                 x.clear()
                 y.clear()
                 statistical_timestamps.clear()
@@ -128,16 +127,16 @@ class DisplaySave:
 
     def __init__(self,args):
         self.q_display = q_display
-        self.q_save = q_save
+        self.p_save = p_save
         self.args = args
     def init(self):
-        plt.rcParams['font.family'] = ['Microsoft YaHei']
+        plt.rcParams['font.family'] = ['STFangsong']
 
         self.xmajorLocator = MultipleLocator(float(self.args.i.strip()[0:-1]))
         self.fig, self.ax = plt.subplots()
-        self.fig.text(0.01,0.92,"绿色:温度在65以下",color="green",verticalalignment='bottom',fontsize=8,fontweight="heavy")
-        self.fig.text(0.01,0.95,"洋红:温度在65至74之间",color="magenta",verticalalignment='bottom',fontsize=8,fontweight="heavy")
-        self.fig.text(0.01,0.98,"红色:温度在74以上",color="red",verticalalignment='bottom',fontsize=8,fontweight="heavy")
+        self.fig.text(0.01,0.97,"绿色:温度在65以下",color="green",verticalalignment='bottom',fontsize=10,fontweight="heavy")
+        self.fig.text(0.1,0.92,"洋红:温度在65至74之间",color="magenta",verticalalignment='bottom',fontsize=10,fontweight="heavy")
+        self.fig.text(0.2,0.97,"红色:温度在74以上",color="red",verticalalignment='bottom',fontsize=10,fontweight="heavy")
         # 定义Y轴刻度
         self.y_range = ['%d' % i for i in np.linspace(1, 100, 50)]
         self.y_num = [eval(oo) for oo in self.y_range]
@@ -161,10 +160,10 @@ class DisplaySave:
     def generating_curves(self):
         regex = re.compile("(.*?)\s+(.*?):(.*?):(.*)")
         matplotlib.use("SVG")
-        self.init()
         while True:
+            self.init()
             try:
-                x,y,statistical_timestamps,report_path,signalover = self.q_save.get(False)
+                x,y,statistical_timestamps,report_path,signalover = self.p_save.recv()
                 #判断是否为空
                 if x==[]:
                     break
@@ -192,7 +191,6 @@ class DisplaySave:
             except Exception as e:
                 print("异常",e)
 
-            print("signalover",signalover)
             if signalover:
                 print("save进程结束...")
                 break
@@ -229,19 +227,12 @@ class DisplaySave:
                 plt.text(i,j,"%.1f$^\circ$C"%j,ha='left',va='bottom',fontsize=8,color=color)
             plt.pause(0.01)
 
-def write():
-    import random
-    while True:
-        number = random.randint(50000,100000)
-        os.system("echo {} > temp".format(number))
-        time.sleep(1)
-
 if __name__ == '__main__':
     regex = re.compile("(.*?)\s+(.*?):(.*?):(.*)")
     #获取数据实时显示
     q_display = Queue()
     #获取数据生成报告
-    q_save = Queue()
+    p_save,p_send = Pipe(duplex=False)
     if not os.path.exists("./reports"):
         os.mkdir("./reports")
     parser = argparse.ArgumentParser()
@@ -264,9 +255,6 @@ if __name__ == '__main__':
             t = float(test_time[0:-1])*60*60*24
     else:
         t = None
-    #write process mdf
-    p1 = Process(target=write)
-    p1.start()
 
     # report process
     base = DisplaySave(args)
@@ -285,7 +273,5 @@ if __name__ == '__main__':
         pass
     if args.disableshow:
         p2.join()
-    #write process mdf
     p3.join()
-    p1.terminate()
     print("main结束")

@@ -20,7 +20,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4cfeec8f-464a-499e-b61d-ad459a1c77f0" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/cpu.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cpu.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/getcputemp.py" beforeDir="false" afterPath="$PROJECT_DIR$/getcputemp.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/temp" beforeDir="false" afterPath="$PROJECT_DIR$/temp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -42,6 +44,7 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_package_manager_path" value="npm" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -57,6 +60,8 @@
       <workItem from="1598429947960" duration="4360000" />
       <workItem from="1598434385710" duration="138000" />
       <workItem from="1598468849290" duration="735000" />
+      <workItem from="1598490595767" duration="2218000" />
+      <workItem from="1598509393821" duration="4304000" />
     </task>
     <servers />
   </component>
@@ -80,6 +85,10 @@
       <screen x="0" y="0" width="1366" height="728" />
     </state>
     <state x="407" y="164" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1366.728@0.0.1366.728" timestamp="1598432636475" />
+    <state x="172" y="8" key="SettingsEditor" timestamp="1598490654607">
+      <screen x="0" y="0" width="1366" height="728" />
+    </state>
+    <state x="172" y="8" key="SettingsEditor/0.0.1366.728@0.0.1366.728" timestamp="1598490654607" />
     <state x="131" y="137" width="1166" height="528" key="com.intellij.history.integration.ui.views.DirectoryHistoryDialog" timestamp="1598469348533">
       <screen x="0" y="0" width="1366" height="728" />
     </state>
