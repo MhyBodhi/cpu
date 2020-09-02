@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
+from matplotlib.animation import FuncAnimation
 
 def convertformat(args):
     sampling_time = args.i.strip()
@@ -80,7 +81,7 @@ def gettemp(t,args):
                 y.append(float(temp)/1000)
                 # 向display进程传递数据
                 if args.disableshow:
-                    q_display.put((statistical_timestamps, x, y,sampling_time,current_fun_status))
+                    q_display.put_nowait((statistical_timestamps, x, y,sampling_time,current_fun_status))
                 time.sleep(sampling_time)
                 start += sampling_frequency
 
@@ -96,7 +97,7 @@ def gettemp(t,args):
                 # 向display进程传递数据
                 if args.disableshow:
                     current_fun_status = 0
-                    q_display.put((statistical_timestamps, x, y, sampling_time, current_fun_status))
+                    q_display.put_nowait((statistical_timestamps, x, y, sampling_time, current_fun_status))
                 p_send.send((x,y,statistical_timestamps,report_path,1))
 
                 break
@@ -113,7 +114,7 @@ def gettemp(t,args):
             y.append(float(temp)/1000)
             # 向display进程传递数据
             if args.disableshow:
-                q_display.put((statistical_timestamps, x, y, sampling_time, current_fun_status))
+                q_display.put_nowait((statistical_timestamps, x, y, sampling_time, current_fun_status))
             time.sleep(sampling_time)
             start += sampling_frequency
             if len(x) == 30:
@@ -129,14 +130,18 @@ class DisplaySave:
         self.q_display = q_display
         self.p_save = p_save
         self.args = args
+
+
     def init(self):
         plt.rcParams['font.family'] = ['STFangsong']
-
-        self.xmajorLocator = MultipleLocator(float(self.args.i.strip()[0:-1]))
         self.fig, self.ax = plt.subplots()
-        self.fig.text(0.01,0.97,"绿色:温度在65以下",color="green",verticalalignment='bottom',fontsize=10,fontweight="heavy")
-        self.fig.text(0.1,0.92,"洋红:温度在65至74之间",color="magenta",verticalalignment='bottom',fontsize=10,fontweight="heavy")
-        self.fig.text(0.2,0.97,"红色:温度在74以上",color="red",verticalalignment='bottom',fontsize=10,fontweight="heavy")
+        self.xmajorLocator = MultipleLocator(float(self.args.i.strip()[0:-1]))
+
+        self.fig.text(0.01, 0.97, "绿色:温度在65以下", color="green", verticalalignment='bottom', fontsize=10,
+                      fontweight="heavy")
+        self.fig.text(0.1, 0.92, "洋红:温度在65至74之间", color="magenta", verticalalignment='bottom', fontsize=10,
+                      fontweight="heavy")
+        self.fig.text(0.2, 0.97, "红色:温度在74以上", color="red", verticalalignment='bottom', fontsize=10, fontweight="heavy")
         # 定义Y轴刻度
         self.y_range = ['%d' % i for i in np.linspace(1, 100, 50)]
         self.y_num = [eval(oo) for oo in self.y_range]
@@ -195,37 +200,45 @@ class DisplaySave:
                 print("save进程结束...")
                 break
 
-    def displaylive(self):
-        self.init()
+    def getdata(self):
         while True:
             try:
-                self.data = self.q_display.get(False)
+                self.data = self.q_display.get_nowait()
                 #判断gettemp函数状态
                 if not self.data[-1]:
                     plt.close()
+                    p2.terminate()
                     break
+                yield self.data
             except:
                 continue
-            self.statistical_timestamps = self.data[0]
-            self.x = self.data[1]
-            #判断是否是空列表
-            if self.x==[]:
-                break
-            self.y = self.data[2]
-            self.sampling_time = self.data[3]
-            self.ax.set(xlim=(min(self.x),max(self.x)),ylim=(min(self.y),max(self.y)))
-            self.x_ticks = [time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(report_time)) for report_time in self.statistical_timestamps]
-            plt.xticks(self.x, self.x_ticks, color="black",rotation=45)
-            plt.plot(self.x,self.y, color="blue", linewidth=1, label="CPU温度走势")
-            for i,j in zip(self.x,self.y):
-                if j > 74:
-                    color = "red"
-                elif 65 <= j <= 74:
-                    color = "magenta"
-                else:
-                    color = "green"
-                plt.text(i,j,"%.1f$^\circ$C"%j,ha='left',va='bottom',fontsize=8,color=color)
-            plt.pause(0.01)
+
+    def show(self):
+        self.init()
+        ani = FuncAnimation(self.fig, self.displaylive,frames=self.getdata,blit=False)
+        plt.show()
+
+    def displaylive(self,data):
+        self.statistical_timestamps = data[0]
+        self.x = data[1]
+        #判断是否是空列表
+        if self.x==[]:
+            return
+        self.y = data[2]
+        self.sampling_time = data[3]
+        self.ax.set(xlim=(min(self.x),max(self.x)),ylim=(min(self.y),max(self.y)))
+        self.x_ticks = [time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(report_time)) for report_time in self.statistical_timestamps]
+        plt.xticks(self.x, self.x_ticks, color="black",rotation=45)
+        plt.plot(self.x,self.y, color="blue", linewidth=1, label="CPU温度走势")
+        for i,j in zip(self.x,self.y):
+            if j > 74:
+                color = "red"
+            elif 65 <= j <= 74:
+                color = "magenta"
+            else:
+                color = "green"
+            plt.text(i,j,"%.1f$^\circ$C"%j,ha='left',va='bottom',fontsize=8,color=color)
+
 
 if __name__ == '__main__':
     regex = re.compile("(.*?)\s+(.*?):(.*?):(.*)")
@@ -263,7 +276,7 @@ if __name__ == '__main__':
 
     if args.disableshow:
         #display process
-        p2 = Process(target=base.displaylive)
+        p2 = Process(target=base.show)
         p2.start()
 
     print("start...")
